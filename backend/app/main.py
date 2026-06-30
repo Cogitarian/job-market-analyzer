@@ -2,9 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI(
     title="Job Market Analyzer",
