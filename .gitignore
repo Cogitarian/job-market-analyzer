@@ -1,5 +1,7 @@
 # Backend
 backend/__pycache__/
+backend/**/__pycache__/
+backend/**/*.pyc
 backend/*.pyc
 backend/.env
 backend/job_market.db
