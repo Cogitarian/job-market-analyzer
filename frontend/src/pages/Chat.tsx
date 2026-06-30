@@ -5,159 +5,226 @@ import './Chat.css'
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
+  mode?: 'demo' | 'live' | 'error'
+}
+
+const SESSION_ID = `session_${Math.random().toString(36).slice(2, 9)}`
+
+const SUGGESTED = [
+  "Jakie umiejętności będą najcenniejsze w 2027?",
+  "Jak AI wpłynie na zarobki juniorów?",
+  "Które miasto oferuje najlepsze perspektywy?",
+  "Co powinienem się uczyć, żeby awansować?",
+  "Jaki jest trend remote work w IT?",
+]
+
+function renderMarkdown(text: string) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br/>')
+    .replace(/#{1,4} (.+)/g, '<strong style="font-size:1.05em">$1</strong>')
+    .replace(/- (.+)/g, '• $1')
 }
 
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('anthropic_key') || '')
+  const [showKeyInput, setShowKeyInput] = useState(false)
+  const [keyDraft, setKeyDraft] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   useEffect(() => {
-    scrollToBottom()
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const sendMessage = async () => {
-    if (!input.trim()) return
+  const isLive = apiKey.startsWith('sk-ant-')
 
-    const userMessage = input
+  const saveKey = () => {
+    localStorage.setItem('anthropic_key', keyDraft)
+    setApiKey(keyDraft)
+    setShowKeyInput(false)
+    setKeyDraft('')
+  }
+
+  const clearKey = () => {
+    localStorage.removeItem('anthropic_key')
+    setApiKey('')
+    setShowKeyInput(false)
+  }
+
+  const sendMessage = async (text?: string) => {
+    const msg = (text || input).trim()
+    if (!msg) return
+
     setInput('')
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setMessages(prev => [...prev, { role: 'user', content: msg }])
     setLoading(true)
-    setError('')
 
     try {
-      const response = await axios.post('/api/chat/send', {
-        message: userMessage
+      const { data } = await axios.post('/api/chat/send', {
+        message: msg,
+        api_key: isLive ? apiKey : null,
+        session_id: SESSION_ID,
       })
 
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: response.data.message
+        content: data.message,
+        mode: data.mode,
       }])
-    } catch (err) {
-      setError('Failed to get response from AI. Please try again.')
-      console.error(err)
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Błąd połączenia z serwerem. Sprawdź czy backend działa.',
+        mode: 'error',
+      }])
     } finally {
       setLoading(false)
     }
   }
 
   const resetChat = async () => {
-    try {
-      await axios.post('/api/chat/reset')
-      setMessages([])
-      setError('')
-    } catch (err) {
-      console.error('Failed to reset chat', err)
-    }
+    await axios.post(`/api/chat/reset?session_id=${SESSION_ID}`)
+    setMessages([])
   }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
-
-  const suggestedQuestions = [
-    "What are the most in-demand skills for 2027?",
-    "How will AI impact junior developer salaries?",
-    "Which cities have the best job growth prospects?",
-    "What skills should I learn for career progression?",
-    "How competitive is the job market becoming?",
-  ]
 
   return (
     <div className="chat">
-      <div className="chat-container">
-        <div className="chat-header">
-          <h2>💬 Job Market AI Assistant</h2>
-          <p>Ask questions about job market trends, predictions, and advice</p>
+      {/* Sidebar with API key config */}
+      <div className="chat-sidebar">
+        <div className="mode-badge" data-live={isLive}>
+          {isLive ? '🟢 Live mode' : '🟡 Demo mode'}
         </div>
 
+        {!isLive && (
+          <div className="mode-info">
+            Działasz na wbudowanych odpowiedziach. Podaj klucz API Anthropic, by rozmawiać z prawdziwym modelem.
+          </div>
+        )}
+        {isLive && (
+          <div className="mode-info live">
+            Połączono z Claude. Klucz przechowywany lokalnie w przeglądarce, nie wysyłany na serwer poza czas rozmowy.
+          </div>
+        )}
+
+        {!showKeyInput && (
+          <button className="key-btn" onClick={() => { setShowKeyInput(true); setKeyDraft(apiKey) }}>
+            {isLive ? '🔑 Zmień klucz' : '🔑 Dodaj klucz API'}
+          </button>
+        )}
+
+        {showKeyInput && (
+          <div className="key-form">
+            <input
+              type="password"
+              value={keyDraft}
+              onChange={e => setKeyDraft(e.target.value)}
+              placeholder="sk-ant-api03-..."
+              autoFocus
+            />
+            <div className="key-actions">
+              <button className="primary" onClick={saveKey} disabled={!keyDraft.startsWith('sk-ant-')}>
+                Zapisz
+              </button>
+              <button onClick={() => setShowKeyInput(false)}>Anuluj</button>
+              {isLive && <button className="danger" onClick={clearKey}>Usuń</button>}
+            </div>
+            <div className="key-hint">
+              Klucz zaczyna się od <code>sk-ant-api03-</code>.<br/>
+              Pobierz na <a href="https://console.anthropic.com" target="_blank" rel="noreferrer">console.anthropic.com</a>
+            </div>
+          </div>
+        )}
+
+        <div className="sidebar-section">
+          <div className="sidebar-label">Sugerowane pytania</div>
+          {SUGGESTED.map((q, i) => (
+            <button key={i} className="suggestion-btn" onClick={() => sendMessage(q)}>
+              {q}
+            </button>
+          ))}
+        </div>
+
+        {messages.length > 0 && (
+          <button className="reset-btn" onClick={resetChat}>
+            🗑 Wyczyść rozmowę
+          </button>
+        )}
+      </div>
+
+      {/* Chat area */}
+      <div className="chat-main">
         <div className="chat-messages">
-          {messages.length === 0 ? (
+          {messages.length === 0 && (
             <div className="chat-welcome">
-              <h3>Welcome! 👋</h3>
-              <p>Ask me anything about the job market, skill trends, salary predictions, or career advice.</p>
-              <div className="suggested-questions">
-                <p className="suggestions-label">Example questions:</p>
-                {suggestedQuestions.map((question, idx) => (
-                  <button
-                    key={idx}
-                    className="suggestion-btn"
-                    onClick={() => {
-                      setInput(question)
-                    }}
-                  >
-                    {question}
-                  </button>
-                ))}
+              <div className="welcome-icon">💬</div>
+              <h3>Asystent analizy rynku pracy</h3>
+              <p>
+                {isLive
+                  ? 'Połączono z Claude. Zadaj pytanie o rynek IT w Polsce.'
+                  : 'Tryb demo – wbudowane odpowiedzi na typowe pytania. Wybierz pytanie lub wpisz własne.'}
+              </p>
+            </div>
+          )}
+
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`message message-${msg.role}`}>
+              <div className="message-avatar">
+                {msg.role === 'user' ? '👤' : msg.mode === 'live' ? '🤖' : '📊'}
+              </div>
+              <div className="message-bubble">
+                {msg.role === 'assistant' ? (
+                  <div
+                    className="message-text"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                  />
+                ) : (
+                  <div className="message-text">{msg.content}</div>
+                )}
+                {msg.mode && msg.role === 'assistant' && (
+                  <div className="message-mode">
+                    {msg.mode === 'live' ? '🟢 Claude API' : msg.mode === 'error' ? '🔴 Error' : '🟡 Demo'}
+                  </div>
+                )}
               </div>
             </div>
-          ) : (
-            <>
-              {messages.map((msg, idx) => (
-                <div key={idx} className={`message message-${msg.role}`}>
-                  <div className="message-avatar">
-                    {msg.role === 'user' ? '👤' : '🤖'}
-                  </div>
-                  <div className="message-content">
-                    <div className="message-text">{msg.content}</div>
-                  </div>
+          ))}
+
+          {loading && (
+            <div className="message message-assistant">
+              <div className="message-avatar">📊</div>
+              <div className="message-bubble">
+                <div className="typing-indicator">
+                  <span /><span /><span />
                 </div>
-              ))}
-              {loading && (
-                <div className="message message-assistant">
-                  <div className="message-avatar">🤖</div>
-                  <div className="message-content">
-                    <div className="typing-indicator">
-                      <span></span><span></span><span></span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
+              </div>
+            </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
-
-        {error && (
-          <div className="error">{error}</div>
-        )}
 
         <div className="chat-input-area">
           <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask me about job market trends, skills, salaries, or career advice..."
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+            }}
+            placeholder="Wpisz pytanie o rynek pracy... (Enter = wyślij, Shift+Enter = nowa linia)"
             disabled={loading}
             rows={3}
           />
-          <div className="chat-actions">
-            <button
-              onClick={sendMessage}
-              disabled={loading || !input.trim()}
-              className="primary send-btn"
-            >
-              {loading ? 'Sending...' : 'Send'}
-            </button>
-            {messages.length > 0 && (
-              <button
-                onClick={resetChat}
-                className="reset-btn"
-              >
-                Clear Chat
-              </button>
-            )}
-          </div>
+          <button
+            className="primary send-btn"
+            onClick={() => sendMessage()}
+            disabled={loading || !input.trim()}
+          >
+            {loading ? '...' : 'Wyślij →'}
+          </button>
         </div>
       </div>
     </div>

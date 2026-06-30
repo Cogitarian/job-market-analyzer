@@ -1,72 +1,199 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List
-import os
-from anthropic import Anthropic
+from typing import Optional
 
 router = APIRouter()
 
-client = Anthropic()
-conversation_history = []
+# Per-session history stored by client (key = session_id)
+_sessions: dict[str, list] = {}
 
-class Message(BaseModel):
-    role: str
-    content: str
+SYSTEM_PROMPT = """Jesteś ekspertem od polskiego rynku pracy w sektorze IT.
+Analizujesz dane z lat 2021-2026 i tworzysz prognozy na 2026-2031.
+Masz dostęp do danych o:
+- Trendach ofert pracy i wynagrodzeniach (Warszawa, Kraków, Wrocław, Poznań, Gdańsk)
+- Wymaganych umiejętnościach (Python, JavaScript, SQL, React, AWS, AI/ML, LLM)
+- Dynamice rynku: wzrost ~12% r/r, boom AI/ML od 2023
+- Prognozach: 3800 ofert/miesiąc w 2026, 5800 w 2031
+- Pensjach: Junior 4-6k PLN, Mid 6-10k PLN, Senior 10-18k PLN (B2B wyżej)
+
+Odpowiadaj rzeczowo, po polsku lub angielsku (zależnie od języka pytania).
+Powołuj się na konkretne dane. Bądź zwięzły."""
+
+
+def demo_response(message: str) -> str:
+    """Rule-based smart responses when no API key is configured."""
+    msg = message.lower()
+
+    if any(w in msg for w in ["python", "javascript", "skill", "umiejętność", "technolog", "język"]):
+        return (
+            "**Najbardziej poszukiwane technologie (2024-2025):**\n\n"
+            "1. **Python** – lider od 2022, obowiązkowy dla AI/ML/Data\n"
+            "2. **TypeScript** – wypiera vanilla JS, wzrost +22% r/r\n"
+            "3. **SQL** – stabilnie wymagany w 80% ofert analitycznych\n"
+            "4. **React** – dominant frontend, ale rośnie zagrożenie ze strony Next.js\n"
+            "5. **AWS/Cloud** – wymagany w 65% ofert senior\n\n"
+            "**Wschodzące (2025-2026):** AI/ML (+45% r/r), LLM integration (+65%), "
+            "Kubernetes (+18%). Znajomość LLM API (Anthropic, OpenAI) staje się "
+            "standardem dla senior devów.\n\n"
+            "*To odpowiedź w trybie demo. Podaj klucz API by rozmawiać z prawdziwym modelem.*"
+        )
+
+    if any(w in msg for w in ["salary", "zarobki", "pensja", "wynagrodzenie", "ile"]):
+        return (
+            "**Widełki płacowe – rynek IT w Polsce (2025, brutto/netto B2B):**\n\n"
+            "| Poziom | UoP (brutto) | B2B (netto) |\n"
+            "|--------|-------------|-------------|\n"
+            "| Junior | 4 000–6 000 PLN | 5 500–8 000 PLN |\n"
+            "| Mid | 7 000–11 000 PLN | 9 000–14 000 PLN |\n"
+            "| Senior | 12 000–18 000 PLN | 16 000–24 000 PLN |\n\n"
+            "**Warszawa płaci ~15% więcej** niż mediana krajowa. Wzrost r/r: ~8%.\n\n"
+            "**Prognoza 2027:** Junior +12%, Mid +15%, Senior +18% względem 2025 "
+            "(napędzane niedoborem specjalistów AI/ML).\n\n"
+            "*Tryb demo – podaj klucz API po lewej, by uzyskać pełną analizę.*"
+        )
+
+    if any(w in msg for w in ["city", "miasto", "warszawa", "kraków", "wrocław", "gdańsk"]):
+        return (
+            "**Rynek pracy IT według miast (2025):**\n\n"
+            "🥇 **Warszawa** – 2500 ofert/mies., avg 8 500 PLN, wzrost +8% r/r\n"
+            "🥈 **Kraków** – 1800 ofert/mies., avg 7 500 PLN, wzrost +12% r/r ⭐ najszybszy\n"
+            "🥉 **Wrocław** – 1200 ofert/mies., avg 7 000 PLN, wzrost +15% r/r\n"
+            "4️⃣ **Poznań** – 950 ofert/mies., avg 6 800 PLN\n"
+            "5️⃣ **Gdańsk** – 850 ofert/mies., avg 7 200 PLN\n\n"
+            "**Trend:** Wrocław i Kraków rosną szybciej niż Warszawa – tańsze biura "
+            "przyciągają centra R&D. Remote work spłaszcza różnice między miastami.\n\n"
+            "*Tryb demo.*"
+        )
+
+    if any(w in msg for w in ["predict", "prognoza", "forecast", "przyszłość", "2027", "2028", "2030", "2031"]):
+        return (
+            "**Prognoza rynku pracy IT 2026-2031:**\n\n"
+            "📈 **Popyt na pracowników:**\n"
+            "- 2026: ~3 800 nowych ofert/miesiąc (+12%)\n"
+            "- 2028: ~4 600 (+21%)\n"
+            "- 2031: ~5 800 (+53% vs 2025)\n\n"
+            "🤖 **Kluczowe kierunki:**\n"
+            "- AI/ML Engineer: brakuje 40 000 specjalistów w PL (2025), deficyt rośnie\n"
+            "- Data Engineering: CAGR 15% do 2031\n"
+            "- \"Klasyczne\" programowanie (CRUD apps): automatyzacja przez AI ograniczy "
+            "wzrost o ~20%\n\n"
+            "⚠️ **Ryzyko:** Junior devs bez AI skills będą mieć trudniej. "
+            "Senior + AI = premum 30-50% względem seniorów bez AI.\n\n"
+            "*Tryb demo – te dane są wbudowane w aplikację.*"
+        )
+
+    if any(w in msg for w in ["ai", "ml", "llm", "machine learning", "sztuczna inteligencja"]):
+        return (
+            "**AI/ML na polskim rynku pracy:**\n\n"
+            "Najszybciej rosnący segment od 2023. Dane:\n\n"
+            "- Oferty z wymaganiem AI/ML: 8% wszystkich (2023) → 23% (2025) → est. 40% (2027)\n"
+            "- Premum płacowe za AI skills: +35-50% vs. porównywalny poziom bez AI\n"
+            "- Najczęstsze kombinacje: Python + PyTorch/TF, Python + HuggingFace, "
+            "Python + LangChain/LlamaIndex\n\n"
+            "**LLM integration (od 2024):** nowa kategoria. Firmy szukają devów którzy "
+            "umieją wdrożyć LLM w produkt (nie badać – wdrożyć). Stack: API calls, "
+            "prompt engineering, RAG, evals.\n\n"
+            "*Tryb demo.*"
+        )
+
+    if any(w in msg for w in ["junior", "początkujący", "start", "zacząć", "nauka"]):
+        return (
+            "**Rady dla juniorów wchodzących na rynek (2025-2026):**\n\n"
+            "Rynek dla juniorów jest trudniejszy niż w 2021-2022 (boom post-COVID minął). "
+            "Ale możliwości istnieją:\n\n"
+            "✅ **Działające ścieżki:**\n"
+            "1. Python + podstawy ML/AI → Data Analyst → Data Scientist\n"
+            "2. TypeScript + React → Frontend/Fullstack\n"
+            "3. DevOps/Cloud (AWS certs) → SRE/Platform Engineer\n\n"
+            "❌ **Trudne bez wyróżnienia:**\n"
+            "- Czysty CRUD w Javie bez czegokolwiek dodatkowego\n"
+            "- Frontend bez TypeScripta\n\n"
+            "**Kluczowe:** portfolio z realnym projektem (nie todo-app), "
+            "aktywność na GitHubie, znajomość AI toolingu (Copilot, Cursor).\n\n"
+            "*Tryb demo – podaj klucz API by uzyskać spersonalizowane porady.*"
+        )
+
+    if any(w in msg for w in ["remote", "zdalny", "hybrid", "hybrydowy"]):
+        return (
+            "**Remote work w polskim IT (2025):**\n\n"
+            "Z naszych danych (5000+ ofert 2021-2026):\n"
+            "- **Full remote:** 40% ofert (wzrost z 25% w 2021)\n"
+            "- **Hybrid:** 40% ofert\n"
+            "- **On-site only:** 20% ofert (głównie fintech, gaming, duże korpo)\n\n"
+            "**Trend:** Post-COVID firmy wróciły do 3 dni/tydzień w biurze, "
+            "ale senior roles mają większą elastyczność. Startupy = więcej remote, "
+            "banki/ubezpieczyciele = więcej on-site.\n\n"
+            "**Prognoza 2027:** Stable ~35-40% full remote. "
+            "Wzrost remote to już nie trend – to nowa norma.\n\n"
+            "*Tryb demo.*"
+        )
+
+    # Generic fallback
+    return (
+        "Jestem analitykiem rynku pracy IT w Polsce (dane 2021-2026). "
+        "Mogę odpowiedzieć na pytania o:\n\n"
+        "- 📊 **Trendy** – jakie technologie rosną / maleją\n"
+        "- 💰 **Wynagrodzenia** – widełki płacowe, wzrosty\n"
+        "- 🌍 **Miasta** – Warszawa vs inne aglomeracje\n"
+        "- 🔮 **Prognozy** – rynek 2026-2031\n"
+        "- 🤖 **AI/ML** – wpływ na rynek\n"
+        "- 👶 **Junior** – jak wejść na rynek\n\n"
+        "Zadaj konkretne pytanie po polsku lub angielsku!\n\n"
+        "*Działam w trybie demo (wbudowane odpowiedzi). "
+        "Podaj klucz API w panelu po lewej, by rozmawiać z prawdziwym modelem AI.*"
+    )
+
 
 class ChatRequest(BaseModel):
     message: str
+    api_key: Optional[str] = None
+    session_id: str = "default"
+
 
 @router.post("/send")
 async def send_message(request: ChatRequest):
-    """Send message to Claude and get analysis"""
-    global conversation_history
+    sid = request.session_id
+    if sid not in _sessions:
+        _sessions[sid] = []
 
-    conversation_history.append({
-        "role": "user",
-        "content": request.message
-    })
+    _sessions[sid].append({"role": "user", "content": request.message})
 
-    system_prompt = """You are an expert job market analyst with deep knowledge of technology careers,
-    salary trends, and future predictions. You're analyzing job market data from 2021-2026 and making
-    predictions for 2026-2031. You have access to real job market analytics including skill requirements,
-    salary trends, job posting volume, and geographic data. Provide insightful, data-driven analysis
-    and discuss the results with the user in a conversational but professional manner. Reference specific
-    data points and trends when available."""
+    # Live mode: user provided their own key
+    if request.api_key and request.api_key.startswith("sk-ant-"):
+        try:
+            from anthropic import Anthropic
+            client = Anthropic(api_key=request.api_key)
+            response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=1024,
+                system=SYSTEM_PROMPT,
+                messages=_sessions[sid],
+            )
+            reply = response.content[0].text
+            mode = "live"
+        except Exception as e:
+            reply = f"Błąd API: {str(e)}\n\nSprawdź czy klucz API jest poprawny."
+            mode = "error"
+    else:
+        # Demo mode: pattern-matched responses
+        reply = demo_response(request.message)
+        mode = "demo"
 
-    try:
-        response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=1024,
-            system=system_prompt,
-            messages=conversation_history
-        )
+    _sessions[sid].append({"role": "assistant", "content": reply})
 
-        assistant_message = response.content[0].text
-        conversation_history.append({
-            "role": "assistant",
-            "content": assistant_message
-        })
+    return {
+        "message": reply,
+        "mode": mode,
+        "conversation_length": len(_sessions[sid]),
+    }
 
-        return {
-            "message": assistant_message,
-            "conversation_length": len(conversation_history)
-        }
-    except Exception as e:
-        return {"error": str(e)}
 
 @router.get("/history")
-async def get_chat_history():
-    """Get chat conversation history"""
-    return {"messages": conversation_history}
+async def get_chat_history(session_id: str = "default"):
+    return {"messages": _sessions.get(session_id, [])}
+
 
 @router.post("/reset")
-async def reset_chat():
-    """Reset chat history"""
-    global conversation_history
-    conversation_history = []
+async def reset_chat(session_id: str = "default"):
+    _sessions.pop(session_id, None)
     return {"status": "cleared"}
-
-@router.post("/analyze-data")
-async def analyze_data_request(request: ChatRequest):
-    """Request AI analysis of currently loaded data"""
-    return await send_message(request)
