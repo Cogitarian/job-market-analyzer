@@ -1,0 +1,290 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, var(--secondary) 0%, #1e40af 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-label {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.keywords-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.keyword-item {
+  background: var(--bg);
+  padding: 12px;
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.keyword-name {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.keyword-count {
+  color: var(--secondary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.keyword-trend {
+  font-size: 12px;
+  margin-top: 6px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.keyword-trend.positive {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.keyword-trend.negative {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.skills-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.year-skills {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.year {
+  font-weight: 700;
+  color: var(--secondary);
+  min-width: 60px;
+}
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skill-tag {
+  background: var(--secondary);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.emerging {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.emerging h4 {
+  margin-bottom: 12px;
+}
+
+.emerging-item {
+  background: #fffbeb;
+  border-left: 4px solid var(--warning);
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.growth {
+  background: var(--warning);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.salary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.salary-item {
+  background: var(--bg);
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.position-name {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: var(--primary);
+}
+
+.salary-values {
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.salary-values .trend {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.positive {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.cities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.city-card {
+  background: var(--bg);
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.city-rank {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--secondary);
+  color: white;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.city-name {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 12px;
+  padding-right: 35px;
+}
+
+.city-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.city-stat:last-child {
+  border-bottom: none;
+}
+
+.city-stat .label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.city-stat .value {
+  font-weight: 600;
+}
+
+.trend-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.trend-info p {
+  margin: 0;
+}
+
+.timeline {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 200px;
+  gap: 8px;
+}
+
+.timeline-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.month {
+  font-size: 11px;
+  color: var(--text-muted);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+.bar {
+  width: 100%;
+  background: linear-gradient(to top, var(--secondary), var(--accent));
+  border-radius: 4px 4px 0 0;
+  min-height: 20px;
+  transition: all 0.2s ease;
+}
+
+.bar:hover {
+  filter: brightness(1.1);
+}
+
+.count {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
