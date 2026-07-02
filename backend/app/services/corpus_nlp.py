@@ -336,7 +336,13 @@ def find_similar(corpus: list[dict], selected_ids: list[str], method: str = "tfi
         scores = [(1.0 if assignments[i] == target_cluster else 0.0, i) for i in other_idx]
 
     elif method == "embeddings":
-        vecs = embed_texts(texts, cache_keys=ids)
+        try:
+            vecs = embed_texts(texts, cache_keys=ids)
+        except ImportError:
+            # sentence-transformers/torch aren't installed on this deployment
+            # (too heavy for the free-tier build) — fall back to tfidf instead
+            # of a raw 500.
+            return find_similar(corpus, selected_ids, method="tfidf", top_k=top_k, n_topics=n_topics)
         avg_vec = vecs[selected_idx].mean(axis=0)
         norms = np.linalg.norm(vecs, axis=1)
         avg_norm = np.linalg.norm(avg_vec) or 1
