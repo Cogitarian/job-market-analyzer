@@ -1,11 +1,39 @@
 import { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
+import { API_BASE } from '../config'
 import './Chat.css'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   mode?: 'demo' | 'live' | 'error'
+}
+
+type Provider = 'anthropic' | 'pcss' | 'groq' | 'custom'
+
+const PROVIDER_INFO: Record<Provider, { label: string; keyHint: string; keyPrefix?: string; signupUrl: string; needsCustomFields?: boolean }> = {
+  anthropic: {
+    label: 'Anthropic (Claude)',
+    keyHint: 'Klucz zaczyna się od sk-ant-api03-',
+    keyPrefix: 'sk-ant-',
+    signupUrl: 'https://console.anthropic.com',
+  },
+  pcss: {
+    label: 'PCSS (llm.hpc.psnc.pl)',
+    keyHint: 'Klucz z panelu PCSS HPC LLM',
+    signupUrl: 'https://llm.hpc.psnc.pl',
+  },
+  groq: {
+    label: 'Groq (darmowy, szybki)',
+    keyHint: 'Darmowy klucz, bez karty płatniczej',
+    signupUrl: 'https://console.groq.com/keys',
+  },
+  custom: {
+    label: 'Inny (własny endpoint)',
+    keyHint: 'Dowolny endpoint kompatybilny z OpenAI API',
+    signupUrl: '',
+    needsCustomFields: true,
+  },
 }
 
 const SESSION_ID = `session_${Math.random().toString(36).slice(2, 9)}`
@@ -31,29 +59,53 @@ export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('anthropic_key') || '')
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('chat_api_key') || '')
+  const [provider, setProvider] = useState<Provider>(() => (localStorage.getItem('chat_provider') as Provider) || 'anthropic')
+  const [customBaseUrl, setCustomBaseUrl] = useState(() => localStorage.getItem('chat_custom_base_url') || '')
+  const [customModel, setCustomModel] = useState(() => localStorage.getItem('chat_custom_model') || '')
   const [showKeyInput, setShowKeyInput] = useState(false)
   const [keyDraft, setKeyDraft] = useState('')
+  const [providerDraft, setProviderDraft] = useState<Provider>(provider)
+  const [baseUrlDraft, setBaseUrlDraft] = useState(customBaseUrl)
+  const [modelDraft, setModelDraft] = useState(customModel)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const isLive = apiKey.startsWith('sk-ant-')
+  const isLive = Boolean(apiKey) && (provider !== 'custom' || Boolean(customBaseUrl && customModel))
 
   const saveKey = () => {
-    localStorage.setItem('anthropic_key', keyDraft)
+    localStorage.setItem('chat_api_key', keyDraft)
+    localStorage.setItem('chat_provider', providerDraft)
+    if (providerDraft === 'custom') {
+      localStorage.setItem('chat_custom_base_url', baseUrlDraft)
+      localStorage.setItem('chat_custom_model', modelDraft)
+      setCustomBaseUrl(baseUrlDraft)
+      setCustomModel(modelDraft)
+    }
     setApiKey(keyDraft)
+    setProvider(providerDraft)
     setShowKeyInput(false)
     setKeyDraft('')
   }
 
   const clearKey = () => {
-    localStorage.removeItem('anthropic_key')
+    localStorage.removeItem('chat_api_key')
+    localStorage.removeItem('chat_provider')
+    localStorage.removeItem('chat_custom_base_url')
+    localStorage.removeItem('chat_custom_model')
     setApiKey('')
+    setCustomBaseUrl('')
+    setCustomModel('')
     setShowKeyInput(false)
   }
+
+  const info = PROVIDER_INFO[providerDraft]
+  const canSave = providerDraft === 'custom'
+    ? Boolean(keyDraft && baseUrlDraft && modelDraft)
+    : Boolean(keyDraft)
 
   const sendMessage = async (text?: string) => {
     const msg = (text || input).trim()
@@ -64,9 +116,12 @@ export default function Chat() {
     setLoading(true)
 
     try {
-      const { data } = await axios.post('/api/chat/send', {
+      const { data } = await axios.post(`${API_BASE}/api/chat/send`, {
         message: msg,
         api_key: isLive ? apiKey : null,
+        provider: isLive ? provider : null,
+        base_url: isLive && provider === 'custom' ? customBaseUrl : null,
+        model: isLive && provider === 'custom' ? customModel : null,
         session_id: SESSION_ID,
       })
 
@@ -96,45 +151,80 @@ export default function Chat() {
       {/* Sidebar with API key config */}
       <div className="chat-sidebar">
         <div className="mode-badge" data-live={isLive}>
-          {isLive ? '🟢 Live mode' : '🟡 Demo mode'}
+          {isLive ? '🟢 Tryb live' : '🟡 Tryb demo'}
         </div>
 
         {!isLive && (
           <div className="mode-info">
-            Działasz na wbudowanych odpowiedziach. Podaj klucz API Anthropic, by rozmawiać z prawdziwym modelem.
+            Działasz na wbudowanych odpowiedziach. Podaj klucz API (Anthropic, PCSS, Groq lub inny), by rozmawiać z prawdziwym modelem.
           </div>
         )}
         {isLive && (
           <div className="mode-info live">
-            Połączono z Claude. Klucz przechowywany lokalnie w przeglądarce, nie wysyłany na serwer poza czas rozmowy.
+            Połączono z {PROVIDER_INFO[provider].label}. Klucz przechowywany lokalnie w przeglądarce, nie wysyłany nigdzie poza czas rozmowy.
           </div>
         )}
 
         {!showKeyInput && (
-          <button className="key-btn" onClick={() => { setShowKeyInput(true); setKeyDraft(apiKey) }}>
-            {isLive ? '🔑 Zmień klucz' : '🔑 Dodaj klucz API'}
+          <button className="key-btn" onClick={() => {
+            setShowKeyInput(true)
+            setProviderDraft(provider)
+            setKeyDraft(apiKey)
+            setBaseUrlDraft(customBaseUrl)
+            setModelDraft(customModel)
+          }}>
+            {isLive ? '🔑 Zmień dostawcę / klucz' : '🔑 Dodaj klucz API'}
           </button>
         )}
 
         {showKeyInput && (
           <div className="key-form">
+            <select
+              value={providerDraft}
+              onChange={e => setProviderDraft(e.target.value as Provider)}
+            >
+              {Object.entries(PROVIDER_INFO).map(([key, p]) => (
+                <option key={key} value={key}>{p.label}</option>
+              ))}
+            </select>
+
             <input
               type="password"
               value={keyDraft}
               onChange={e => setKeyDraft(e.target.value)}
-              placeholder="sk-ant-api03-..."
+              placeholder={info.keyPrefix ? `${info.keyPrefix}...` : 'Klucz API...'}
               autoFocus
             />
+
+            {info.needsCustomFields && (
+              <>
+                <input
+                  type="text"
+                  value={baseUrlDraft}
+                  onChange={e => setBaseUrlDraft(e.target.value)}
+                  placeholder="https://api.example.com/v1/chat/completions"
+                />
+                <input
+                  type="text"
+                  value={modelDraft}
+                  onChange={e => setModelDraft(e.target.value)}
+                  placeholder="nazwa-modelu"
+                />
+              </>
+            )}
+
             <div className="key-actions">
-              <button className="primary" onClick={saveKey} disabled={!keyDraft.startsWith('sk-ant-')}>
+              <button className="primary" onClick={saveKey} disabled={!canSave}>
                 Zapisz
               </button>
               <button onClick={() => setShowKeyInput(false)}>Anuluj</button>
               {isLive && <button className="danger" onClick={clearKey}>Usuń</button>}
             </div>
             <div className="key-hint">
-              Klucz zaczyna się od <code>sk-ant-api03-</code>.<br/>
-              Pobierz na <a href="https://console.anthropic.com" target="_blank" rel="noreferrer">console.anthropic.com</a>
+              {info.keyHint}.<br/>
+              {info.signupUrl && (
+                <>Pobierz na <a href={info.signupUrl} target="_blank" rel="noreferrer">{info.signupUrl.replace('https://', '')}</a></>
+              )}
             </div>
           </div>
         )}
@@ -164,7 +254,7 @@ export default function Chat() {
               <h3>Asystent analizy rynku pracy</h3>
               <p>
                 {isLive
-                  ? 'Połączono z Claude. Zadaj pytanie o rynek IT w Polsce.'
+                  ? `Połączono z ${PROVIDER_INFO[provider].label}. Zadaj pytanie o rynek IT w Polsce.`
                   : 'Tryb demo – wbudowane odpowiedzi na typowe pytania. Wybierz pytanie lub wpisz własne.'}
               </p>
             </div>
@@ -186,7 +276,7 @@ export default function Chat() {
                 )}
                 {msg.mode && msg.role === 'assistant' && (
                   <div className="message-mode">
-                    {msg.mode === 'live' ? '🟢 Claude API' : msg.mode === 'error' ? '🔴 Error' : '🟡 Demo'}
+                    {msg.mode === 'live' ? `🟢 ${PROVIDER_INFO[provider].label}` : msg.mode === 'error' ? '🔴 Błąd' : '🟡 Demo'}
                   </div>
                 )}
               </div>
