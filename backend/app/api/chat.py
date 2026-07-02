@@ -6,11 +6,24 @@ import requests
 
 router = APIRouter()
 
-# PCSS HPC LLM gateway (https://llm.hpc.psnc.pl) — OpenAI-compatible /chat/completions.
-# Used automatically when configured, so users don't need their own Anthropic key.
-PCSS_BASE_URL = os.environ.get("PCSS_LLM_BASE_URL", "https://llm.hpc.psnc.pl/api/chat/completions")
-PCSS_API_KEY = os.environ.get("PCSS_LLM_API_KEY", "")
-PCSS_MODEL = os.environ.get("PCSS_LLM_MODEL", "Bielik-11B-v2.3-Instruct")
+# Server-side OpenAI-compatible providers, tried in order until one is configured.
+# PCSS HPC LLM gateway (https://llm.hpc.psnc.pl) has a tight per-key quota;
+# Groq (https://console.groq.com, free, no card) is a higher-limit fallback —
+# both speak the same /chat/completions shape so one code path covers both.
+_PROVIDERS = [
+    {
+        "name": "pcss",
+        "base_url": os.environ.get("PCSS_LLM_BASE_URL", "https://llm.hpc.psnc.pl/api/chat/completions"),
+        "api_key": os.environ.get("PCSS_LLM_API_KEY", ""),
+        "model": os.environ.get("PCSS_LLM_MODEL", "Bielik-11B-v2.3-Instruct"),
+    },
+    {
+        "name": "groq",
+        "base_url": os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1/chat/completions"),
+        "api_key": os.environ.get("GROQ_API_KEY", ""),
+        "model": os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    },
+]
 
 # Per-session history stored by client (key = session_id)
 _sessions: dict[str, list] = {}
@@ -182,29 +195,37 @@ async def send_message(request: ChatRequest):
         except Exception as e:
             reply = f"Błąd API: {str(e)}\n\nSprawdź czy klucz API jest poprawny."
             mode = "error"
-    # Live mode 2: PCSS HPC LLM gateway configured server-side
-    elif PCSS_API_KEY:
-        try:
-            resp = requests.post(
-                PCSS_BASE_URL,
-                headers={"Authorization": f"Bearer {PCSS_API_KEY}"},
-                json={
-                    "model": PCSS_MODEL,
-                    "messages": [{"role": "system", "content": SYSTEM_PROMPT}, *_sessions[sid]],
-                    "max_tokens": 1024,
-                },
-                timeout=60,
-            )
-            resp.raise_for_status()
-            reply = resp.json()["choices"][0]["message"]["content"]
-            mode = "live"
-        except Exception as e:
-            reply = f"Błąd API (PCSS LLM): {str(e)}"
-            mode = "error"
     else:
-        # Demo mode: pattern-matched responses
-        reply = demo_response(request.message)
-        mode = "demo"
+        # Live mode 2: server-side OpenAI-compatible providers, tried in order
+        configured = [p for p in _PROVIDERS if p["api_key"]]
+        reply, mode = None, None
+        for provider in configured:
+            try:
+                resp = requests.post(
+                    provider["base_url"],
+                    headers={"Authorization": f"Bearer {provider['api_key']}"},
+                    json={
+                        "model": provider["model"],
+                        "messages": [{"role": "system", "content": SYSTEM_PROMPT}, *_sessions[sid]],
+                        "max_tokens": 1024,
+                    },
+                    timeout=60,
+                )
+                resp.raise_for_status()
+                reply = resp.json()["choices"][0]["message"]["content"]
+                mode = "live"
+                break
+            except Exception:
+                continue  # try next provider (e.g. quota exhausted)
+
+        if reply is None:
+            if configured:
+                reply = "Błąd API: żaden skonfigurowany dostawca LLM nie odpowiedział poprawnie."
+                mode = "error"
+            else:
+                # Demo mode: pattern-matched responses
+                reply = demo_response(request.message)
+                mode = "demo"
 
     _sessions[sid].append({"role": "assistant", "content": reply})
 
