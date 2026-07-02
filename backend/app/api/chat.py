@@ -1,8 +1,16 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
+import os
+import requests
 
 router = APIRouter()
+
+# PCSS HPC LLM gateway (https://llm.hpc.psnc.pl) — OpenAI-compatible /chat/completions.
+# Used automatically when configured, so users don't need their own Anthropic key.
+PCSS_BASE_URL = os.environ.get("PCSS_LLM_BASE_URL", "https://llm.hpc.psnc.pl/api/chat/completions")
+PCSS_API_KEY = os.environ.get("PCSS_LLM_API_KEY", "")
+PCSS_MODEL = os.environ.get("PCSS_LLM_MODEL", "Bielik-11B-v2.3-Instruct")
 
 # Per-session history stored by client (key = session_id)
 _sessions: dict[str, list] = {}
@@ -158,7 +166,7 @@ async def send_message(request: ChatRequest):
 
     _sessions[sid].append({"role": "user", "content": request.message})
 
-    # Live mode: user provided their own key
+    # Live mode 1: user provided their own Anthropic key
     if request.api_key and request.api_key.startswith("sk-ant-"):
         try:
             from anthropic import Anthropic
@@ -173,6 +181,25 @@ async def send_message(request: ChatRequest):
             mode = "live"
         except Exception as e:
             reply = f"Błąd API: {str(e)}\n\nSprawdź czy klucz API jest poprawny."
+            mode = "error"
+    # Live mode 2: PCSS HPC LLM gateway configured server-side
+    elif PCSS_API_KEY:
+        try:
+            resp = requests.post(
+                PCSS_BASE_URL,
+                headers={"Authorization": f"Bearer {PCSS_API_KEY}"},
+                json={
+                    "model": PCSS_MODEL,
+                    "messages": [{"role": "system", "content": SYSTEM_PROMPT}, *_sessions[sid]],
+                    "max_tokens": 1024,
+                },
+                timeout=60,
+            )
+            resp.raise_for_status()
+            reply = resp.json()["choices"][0]["message"]["content"]
+            mode = "live"
+        except Exception as e:
+            reply = f"Błąd API (PCSS LLM): {str(e)}"
             mode = "error"
     else:
         # Demo mode: pattern-matched responses

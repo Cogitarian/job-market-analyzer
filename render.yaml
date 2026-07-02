@@ -8,8 +8,12 @@ services:
     envVars:
       - key: DEBUG
         value: "False"
-      - key: ANTHROPIC_API_KEY
+      - key: PCSS_LLM_API_KEY
         sync: false
+      - key: PCSS_LLM_BASE_URL
+        value: https://llm.hpc.psnc.pl/api/chat/completions
+      - key: PCSS_LLM_MODEL
+        value: Bielik-11B-v2.3-Instruct
       - key: ALLOWED_ORIGINS
         sync: false
     healthCheckPath: /health
