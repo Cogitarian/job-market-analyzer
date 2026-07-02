@@ -1,0 +1,22 @@
+name = "job-market-analyzer"
+type = "javascript"
+account_id = ""
+workers_dev = false
+route = ""
+zone_id = ""
+
+# Build settings for Cloudflare Pages
+[build]
+command = "cd frontend && npm install && npm run build"
+cwd = "./frontend"
+watch_paths = ["frontend/src/**/*.{ts,tsx,css}"]
+
+[build.upload]
+dir = "frontend/dist"
+
+# Environment variables
+[env.production]
+vars = { VITE_API_URL = "https://job-market-analyzer-backend.railway.app" }
+
+[env.preview]
+vars = { VITE_API_URL = "https://preview-job-market-analyzer-backend.railway.app" }

@@ -1,0 +1,57 @@
+name: Deploy to Railway & Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    name: Deploy Backend to Railway
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Railway
+        uses: railway-app/action@v1
+        with:
+          token: ${{ secrets.RAILWAY_TOKEN }}
+          service: backend
+          environment: production
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend to Cloudflare Pages
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: frontend
+          command: pages deploy dist --project-name job-market-analyzer
+          secrets: |
+            VITE_API_URL
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
