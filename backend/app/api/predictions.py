@@ -16,7 +16,7 @@ async def demand_forecast(years: int = 5):
             "2031": {"total_positions": 5800, "confidence": 0.72},
         },
         "growth_rate": 0.10,
-        "method": "Prophet + ARIMA hybrid"
+        "method": "model hybrydowy Prophet + ARIMA"
     }
 
 @router.get("/skills-forecast")
@@ -82,26 +82,26 @@ async def market_insights():
     return {
         "key_insights": [
             {
-                "title": "AI/ML Skills Dominance",
-                "description": "AI and machine learning skills will be the primary differentiator for competitive salaries through 2031",
+                "title": "Dominacja umiejętności AI/ML",
+                "description": "Umiejętności sztucznej inteligencji i uczenia maszynowego będą głównym czynnikiem różnicującym konkurencyjne wynagrodzenia do 2031 roku",
                 "confidence": 0.94,
                 "impact": "high"
             },
             {
-                "title": "Remote Work Consolidation",
-                "description": "Remote and hybrid positions will continue to grow, especially for senior roles",
+                "title": "Konsolidacja pracy zdalnej",
+                "description": "Stanowiska zdalne i hybrydowe będą nadal zyskiwać na popularności, zwłaszcza na stanowiskach seniorskich",
                 "confidence": 0.87,
                 "impact": "high"
             },
             {
-                "title": "Salary Compression Risk",
-                "description": "Junior roles may see slower salary growth due to increased competition from AI automation",
+                "title": "Ryzyko kompresji wynagrodzeń",
+                "description": "Stanowiska juniorskie mogą odnotować wolniejszy wzrost wynagrodzeń z powodu rosnącej konkurencji ze strony automatyzacji opartej na AI",
                 "confidence": 0.75,
                 "impact": "medium"
             },
             {
-                "title": "Data Engineering Boom",
-                "description": "Data engineering positions will grow faster than other specializations (15% CAGR)",
+                "title": "Boom na inżynierię danych",
+                "description": "Stanowiska związane z inżynierią danych będą rosnąć szybciej niż inne specjalizacje (15% CAGR)",
                 "confidence": 0.89,
                 "impact": "high"
             }

@@ -165,9 +165,26 @@ def demo_response(message: str) -> str:
     )
 
 
+# Presets for the "pick a provider, paste your own key" flow in the UI.
+# 'custom' requires the client to also send base_url + model.
+_USER_PROVIDER_PRESETS = {
+    "pcss": {
+        "base_url": "https://llm.hpc.psnc.pl/api/chat/completions",
+        "model": "Bielik-11B-v2.3-Instruct",
+    },
+    "groq": {
+        "base_url": "https://api.groq.com/openai/v1/chat/completions",
+        "model": "llama-3.3-70b-versatile",
+    },
+}
+
+
 class ChatRequest(BaseModel):
     message: str
     api_key: Optional[str] = None
+    provider: Optional[str] = None  # "anthropic" | "pcss" | "groq" | "custom"
+    base_url: Optional[str] = None  # required when provider == "custom"
+    model: Optional[str] = None     # required when provider == "custom"
     session_id: str = "default"
 
 
@@ -179,8 +196,10 @@ async def send_message(request: ChatRequest):
 
     _sessions[sid].append({"role": "user", "content": request.message})
 
+    provider = request.provider or ("anthropic" if request.api_key and request.api_key.startswith("sk-ant-") else None)
+
     # Live mode 1: user provided their own Anthropic key
-    if request.api_key and request.api_key.startswith("sk-ant-"):
+    if provider == "anthropic" and request.api_key:
         try:
             from anthropic import Anthropic
             client = Anthropic(api_key=request.api_key)
@@ -195,6 +214,35 @@ async def send_message(request: ChatRequest):
         except Exception as e:
             reply = f"Błąd API: {str(e)}\n\nSprawdź czy klucz API jest poprawny."
             mode = "error"
+    # Live mode 2: user provided their own key for an OpenAI-compatible provider
+    elif provider in ("pcss", "groq", "custom") and request.api_key:
+        if provider == "custom":
+            base_url, model = request.base_url, request.model
+        else:
+            preset = _USER_PROVIDER_PRESETS[provider]
+            base_url, model = preset["base_url"], preset["model"]
+
+        if not base_url or not model:
+            reply = "Błąd konfiguracji: brak base_url lub model dla własnego dostawcy."
+            mode = "error"
+        else:
+            try:
+                resp = requests.post(
+                    base_url,
+                    headers={"Authorization": f"Bearer {request.api_key}"},
+                    json={
+                        "model": model,
+                        "messages": [{"role": "system", "content": SYSTEM_PROMPT}, *_sessions[sid]],
+                        "max_tokens": 1024,
+                    },
+                    timeout=60,
+                )
+                resp.raise_for_status()
+                reply = resp.json()["choices"][0]["message"]["content"]
+                mode = "live"
+            except Exception as e:
+                reply = f"Błąd API ({provider}): {str(e)}"
+                mode = "error"
     else:
         # Live mode 2: server-side OpenAI-compatible providers, tried in order
         configured = [p for p in _PROVIDERS if p["api_key"]]

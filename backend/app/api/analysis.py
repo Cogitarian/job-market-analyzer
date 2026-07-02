@@ -64,7 +64,7 @@ async def job_postings_trend():
             {"month": "2025-01", "count": 3200},
             {"month": "2026-01", "count": 3600},
         ],
-        "trend_direction": "growing",
+        "trend_direction": "rosnący",
         "growth_rate": 0.12
     }
 

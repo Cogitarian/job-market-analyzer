@@ -1,0 +1,203 @@
+.sp-section {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.sp-section h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  color: var(--text, #1f2937);
+}
+
+.sp-plan-btn {
+  width: 100%;
+  font-size: 1.05rem;
+  padding: 0.8rem;
+}
+
+.sp-results {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 10px;
+  padding: 1.2rem;
+}
+
+.sp-subsection {
+  margin-top: 1.2rem;
+}
+
+.sp-subsection h4 {
+  margin: 0 0 0.6rem;
+  color: var(--text, #1f2937);
+}
+
+.sp-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sp-bar-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 70px;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.sp-bar-label {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.sp-bar-track {
+  height: 18px;
+  background: var(--bg, #f3f4f6);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sp-bar-fill {
+  height: 100%;
+  background: var(--accent, #3b82f6);
+  border-radius: 4px;
+}
+
+.sp-bar-value {
+  font-size: 0.85rem;
+  text-align: right;
+  color: var(--text, #1f2937);
+}
+
+.sp-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sp-table th, .sp-table td {
+  border: 1px solid var(--border, #e5e7eb);
+  padding: 0.4rem 0.7rem;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.sp-table th {
+  background: var(--bg, #f3f4f6);
+}
+
+.sp-row-violation td {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Drzewo poziome */
+.sp-tree-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0.75rem 0;
+  font-size: 0.85rem;
+}
+
+.sp-tree-breadcrumb button {
+  background: var(--bg, #f3f4f6);
+  border: 1px solid var(--border, #e5e7eb);
+  color: var(--text, #1f2937);
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.sp-tree-breadcrumb button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sp-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.sp-tree-node {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  background: var(--bg, #f3f4f6);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.sp-tree-node:hover {
+  border-color: var(--accent, #3b82f6);
+}
+
+.sp-tree-word {
+  font-weight: 600;
+  color: var(--text, #1f2937);
+}
+
+.sp-tree-count {
+  font-size: 0.78rem;
+  color: var(--text-muted, #6b7280);
+  margin-left: auto;
+}
+
+.sp-tree-arrow {
+  color: var(--accent, #3b82f6);
+  font-weight: 700;
+}
+
+/* Filtruj wg struktury */
+.sp-domain-block {
+  margin: 1rem 0;
+}
+
+.sp-domain-block h4 {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+  margin-bottom: 0.5rem;
+}
+
+.sp-domain-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.sp-domain-pill {
+  background: var(--bg, #f3f4f6);
+  border: 1px solid var(--border, #e5e7eb);
+  color: var(--text, #1f2937);
+  padding: 0.3rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.sp-domain-pill span {
+  color: var(--text-muted, #6b7280);
+  font-size: 0.75rem;
+}
+
+.sp-domain-pill.active {
+  background: var(--accent, #3b82f6);
+  border-color: var(--accent, #3b82f6);
+  color: white;
+}
+
+.sp-domain-pill.active span {
+  color: rgba(255, 255, 255, 0.8);
+}

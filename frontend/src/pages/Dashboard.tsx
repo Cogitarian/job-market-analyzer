@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { API_BASE } from '../config'
 import './Dashboard.css'
 
 export default function Dashboard() {
@@ -10,12 +11,12 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         const [summary, keywords, skills, salaries, trend, cities] = await Promise.all([
-          axios.get('/api/data/summary'),
-          axios.get('/api/analysis/keywords'),
-          axios.get('/api/analysis/skills'),
-          axios.get('/api/analysis/salary-analysis'),
-          axios.get('/api/analysis/job-postings-trend'),
-          axios.get('/api/analysis/cities'),
+          axios.get(`${API_BASE}/api/data/summary`),
+          axios.get(`${API_BASE}/api/analysis/keywords`),
+          axios.get(`${API_BASE}/api/analysis/skills`),
+          axios.get(`${API_BASE}/api/analysis/salary-analysis`),
+          axios.get(`${API_BASE}/api/analysis/job-postings-trend`),
+          axios.get(`${API_BASE}/api/analysis/cities`),
         ])
 
         setData({
@@ -37,32 +38,32 @@ export default function Dashboard() {
   }, [])
 
   if (loading) {
-    return <div className="loading">📊 Loading dashboard...</div>
+    return <div className="loading">📊 Wczytywanie pulpitu...</div>
   }
 
   return (
     <div className="dashboard">
-      <h2>Job Market Overview (2021-2026)</h2>
+      <h2>Przegląd rynku pracy (2021-2026)</h2>
 
       {/* Summary Statistics */}
       <div className="grid grid-3">
         <div className="stat-card">
-          <div className="stat-label">Total Job Postings</div>
+          <div className="stat-label">Liczba ofert pracy</div>
           <div className="stat-value">{data?.summary?.total_jobs?.toLocaleString()}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Unique Positions</div>
+          <div className="stat-label">Unikalne stanowiska</div>
           <div className="stat-value">{data?.summary?.unique_positions || 0}</div>
         </div>
         <div className="stat-card">
-          <div className="stat-label">Average Salary</div>
+          <div className="stat-label">Średnie wynagrodzenie</div>
           <div className="stat-value">{data?.summary?.salary_stats?.avg?.toLocaleString()} PLN</div>
         </div>
       </div>
 
       {/* Top Keywords */}
       <div className="card">
-        <h3>📌 Top Required Skills</h3>
+        <h3>📌 Najbardziej poszukiwane umiejętności</h3>
         <div className="keywords-grid">
           {data?.keywords?.keywords?.slice(0, 10).map((item: any, idx: number) => (
             <div key={idx} className="keyword-item">
@@ -78,7 +79,7 @@ export default function Dashboard() {
 
       {/* Skills by Year */}
       <div className="card">
-        <h3>📊 Skill Evolution</h3>
+        <h3>📊 Ewolucja umiejętności</h3>
         <div className="skills-timeline">
           {Object.entries(data?.skills?.skills_by_year || {}).map(([year, skills]: any) => (
             <div key={year} className="year-skills">
@@ -94,11 +95,11 @@ export default function Dashboard() {
 
         {data?.skills?.emerging_skills?.length > 0 && (
           <div className="emerging">
-            <h4>🚀 Emerging Skills</h4>
+            <h4>🚀 Nowo pojawiające się umiejętności</h4>
             {data.skills.emerging_skills.map((skill: any, idx: number) => (
               <div key={idx} className="emerging-item">
-                <strong>{skill.skill}</strong> (appeared in {skill.first_appeared})
-                <span className="growth">{(skill.growth_rate * 100).toFixed(0)}% growth</span>
+                <strong>{skill.skill}</strong> (pojawiła się w {skill.first_appeared})
+                <span className="growth">wzrost o {(skill.growth_rate * 100).toFixed(0)}%</span>
               </div>
             ))}
           </div>
@@ -107,14 +108,14 @@ export default function Dashboard() {
 
       {/* Salary Analysis */}
       <div className="card">
-        <h3>💰 Salary Analysis</h3>
+        <h3>💰 Analiza wynagrodzeń</h3>
         <div className="salary-grid">
           {Object.entries(data?.salaries?.salary_by_position || {}).map(([position, stats]: any) => (
             <div key={position} className="salary-item">
               <div className="position-name">{position}</div>
               <div className="salary-values">
-                <div>Avg: <strong>{stats.avg.toLocaleString()} PLN</strong></div>
-                <div>Median: <strong>{stats.median.toLocaleString()} PLN</strong></div>
+                <div>Średnia: <strong>{stats.avg.toLocaleString()} PLN</strong></div>
+                <div>Mediana: <strong>{stats.median.toLocaleString()} PLN</strong></div>
                 <div className="trend">Trend: <span className="positive">+{(stats.trend * 100).toFixed(1)}%</span></div>
               </div>
             </div>
@@ -124,22 +125,22 @@ export default function Dashboard() {
 
       {/* Top Cities */}
       <div className="card">
-        <h3>🌍 Job Market by Cities</h3>
+        <h3>🌍 Rynek pracy według miast</h3>
         <div className="cities-grid">
           {data?.cities?.top_cities?.map((city: any, idx: number) => (
             <div key={idx} className="city-card">
               <div className="city-rank">#{idx + 1}</div>
               <div className="city-name">{city.city}</div>
               <div className="city-stat">
-                <span className="label">Jobs:</span>
+                <span className="label">Oferty:</span>
                 <span className="value">{city.jobs}</span>
               </div>
               <div className="city-stat">
-                <span className="label">Avg Salary:</span>
+                <span className="label">Śr. wynagrodzenie:</span>
                 <span className="value">{city.avg_salary.toLocaleString()} PLN</span>
               </div>
               <div className="city-stat">
-                <span className="label">Growth:</span>
+                <span className="label">Wzrost:</span>
                 <span className="value positive">+{(city.growth * 100).toFixed(1)}%</span>
               </div>
             </div>
@@ -149,10 +150,10 @@ export default function Dashboard() {
 
       {/* Job Postings Trend */}
       <div className="card">
-        <h3>📈 Job Postings Trend</h3>
+        <h3>📈 Trend liczby ofert pracy</h3>
         <div className="trend-info">
-          <p>Overall trend: <strong>{data?.trend?.trend_direction}</strong></p>
-          <p>Growth rate: <strong>+{(data?.trend?.growth_rate * 100).toFixed(1)}%</strong> per period</p>
+          <p>Ogólny trend: <strong>{data?.trend?.trend_direction}</strong></p>
+          <p>Tempo wzrostu: <strong>+{(data?.trend?.growth_rate * 100).toFixed(1)}%</strong> na okres</p>
         </div>
         <div className="timeline">
           {data?.trend?.monthly_trend?.map((point: any, idx: number) => (

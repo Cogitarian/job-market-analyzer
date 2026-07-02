@@ -15,28 +15,64 @@ export default function Navigation({ currentPage, onNavigate, dataLoaded }: Navi
         className={`nav-item ${isActive('data')}`}
         onClick={() => onNavigate('data')}
       >
-        📥 Data Loader
+        📥 Wczytaj dane
       </button>
       <button
         className={`nav-item ${isActive('dashboard')} ${!dataLoaded ? 'disabled' : ''}`}
         onClick={() => dataLoaded && onNavigate('dashboard')}
         disabled={!dataLoaded}
       >
-        📈 Dashboard
+        📈 Pulpit
       </button>
       <button
         className={`nav-item ${isActive('predictions')} ${!dataLoaded ? 'disabled' : ''}`}
         onClick={() => dataLoaded && onNavigate('predictions')}
         disabled={!dataLoaded}
       >
-        🔮 Predictions
+        🔮 Prognozy
       </button>
       <button
         className={`nav-item ${isActive('chat')} ${!dataLoaded ? 'disabled' : ''}`}
         onClick={() => dataLoaded && onNavigate('chat')}
         disabled={!dataLoaded}
       >
-        💬 Chat
+        💬 Czat
+      </button>
+      <button
+        className={`nav-item ${isActive('outcomes')}`}
+        onClick={() => onNavigate('outcomes')}
+      >
+        🎓 Efekty kształcenia
+      </button>
+      <button
+        className={`nav-item ${isActive('kierunkowe')}`}
+        onClick={() => onNavigate('kierunkowe')}
+      >
+        🏛 Rejestr efektów wg kierunków
+      </button>
+      <button
+        className={`nav-item ${isActive('analiza')}`}
+        onClick={() => onNavigate('analiza')}
+      >
+        🧬 Analiza porównawcza
+      </button>
+      <button
+        className={`nav-item ${isActive('tresci')}`}
+        onClick={() => onNavigate('tresci')}
+      >
+        📖 Analiza treści
+      </button>
+      <button
+        className={`nav-item ${isActive('planner')}`}
+        onClick={() => onNavigate('planner')}
+      >
+        🗺 Zaplanuj swoje studia
+      </button>
+      <button
+        className={`nav-item ${isActive('jobmarket')}`}
+        onClick={() => onNavigate('jobmarket')}
+      >
+        💼 Rynek pracy → Program
       </button>
     </nav>
   )

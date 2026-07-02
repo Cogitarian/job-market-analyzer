@@ -1,0 +1,52 @@
+{
+  "_source": "GUS - Struktura wynagrodzeń według zawodów za październik 2024 r.",
+  "_url": "https://stat.gov.pl/obszary-tematyczne/rynek-pracy/pracujacy-zatrudnieni-wynagrodzenia-koszty-pracy/struktura-wynagrodzen-wedlug-zawodow-za-pazdziernik-2024-r-,5,9.html",
+  "_note": "Przeciętne miesięczne wynagrodzenie brutto (PLN) wg wielkich grup zawodów (ISCO-08 major groups 1-9), październik 2024. Prawdziwe dane oficjalne GUS.",
+  "by_isco_major_group": {
+    "Przedstawiciele władz publicznych, wyżsi urzędnicy i kierownicy": {
+      "ogolem": 15213.78,
+      "mezczyzni": 16743.67,
+      "kobiety": 13483.36
+    },
+    "Specjaliści": {
+      "ogolem": 10734.04,
+      "mezczyzni": 12244.6,
+      "kobiety": 9906.23
+    },
+    "Technicy i inny średni personel": {
+      "ogolem": 8701.93,
+      "mezczyzni": 9521.35,
+      "kobiety": 8042.57
+    },
+    "Pracownicy biurowi": {
+      "ogolem": 6993.97,
+      "mezczyzni": 7017.7,
+      "kobiety": 6977.94
+    },
+    "Pracownicy usług i sprzedawcy": {
+      "ogolem": 5863.53,
+      "mezczyzni": 6319.16,
+      "kobiety": 5630.42
+    },
+    "Rolnicy, ogrodnicy, leśnicy i rybacy": {
+      "ogolem": 6264.42,
+      "mezczyzni": 6297.28,
+      "kobiety": 6169.81
+    },
+    "Robotnicy przemysłowi i rzemieślnicy": {
+      "ogolem": 7077.3,
+      "mezczyzni": 7302.53,
+      "kobiety": 5758.02
+    },
+    "Operatorzy i monterzy maszyn i urządzeń": {
+      "ogolem": 7476.61,
+      "mezczyzni": 7799.23,
+      "kobiety": 6149.7
+    },
+    "Pracownicy wykonujący prace proste": {
+      "ogolem": 5725.36,
+      "mezczyzni": 6168.31,
+      "kobiety": 5489.69
+    }
+  }
+}

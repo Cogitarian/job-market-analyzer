@@ -9,7 +9,7 @@ if [ ! -d "backend/venv" ]; then
   python3 -m venv backend/venv
 fi
 echo "Instaluję zależności backendu..."
-backend/venv/bin/pip install -q fastapi uvicorn python-multipart pydantic pandas numpy anthropic
+backend/venv/bin/pip install -q fastapi uvicorn python-multipart pydantic pandas numpy anthropic pdfplumber
 
 echo "Startuję backend (port 8000)..."
 (cd backend && ../venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000) &

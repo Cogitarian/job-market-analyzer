@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { API_BASE } from '../config'
 import './DataLoader.css'
 
 interface DataLoaderProps {
@@ -13,14 +14,14 @@ export default function DataLoader({ onDataLoaded }: DataLoaderProps) {
 
   const loadDemoData = async () => {
     setLoading(true)
-    setMessage('Loading demo data...')
+    setMessage('Wczytywanie danych demo...')
     try {
-      const response = await axios.get('/api/data/demo')
+      const response = await axios.get(`${API_BASE}/api/data/demo`)
       setDataInfo(response.data)
-      setMessage('✅ Demo data loaded successfully!')
+      setMessage('✅ Dane demo wczytane pomyślnie!')
       setTimeout(() => onDataLoaded(), 500)
     } catch (error) {
-      setMessage('❌ Failed to load demo data')
+      setMessage('❌ Nie udało się wczytać danych demo')
     } finally {
       setLoading(false)
     }
@@ -31,18 +32,18 @@ export default function DataLoader({ onDataLoaded }: DataLoaderProps) {
     if (!file) return
 
     setLoading(true)
-    setMessage(`Uploading ${file.name}...`)
+    setMessage(`Przesyłanie pliku ${file.name}...`)
 
     const formData = new FormData()
     formData.append('file', file)
 
     try {
-      const response = await axios.post('/api/data/upload', formData)
+      const response = await axios.post(`${API_BASE}/api/data/upload`, formData)
       setDataInfo(response.data)
-      setMessage('✅ File uploaded successfully!')
+      setMessage('✅ Plik przesłany pomyślnie!')
       setTimeout(() => onDataLoaded(), 500)
     } catch (error) {
-      setMessage('❌ Failed to upload file')
+      setMessage('❌ Nie udało się przesłać pliku')
     } finally {
       setLoading(false)
     }
@@ -51,27 +52,27 @@ export default function DataLoader({ onDataLoaded }: DataLoaderProps) {
   return (
     <div className="data-loader">
       <div className="loader-card">
-        <h2>Load Job Market Data</h2>
-        <p className="description">Choose a data source to analyze the job market (2021-2026)</p>
+        <h2>Wczytaj dane o rynku pracy</h2>
+        <p className="description">Wybierz źródło danych do analizy rynku pracy (2021-2026)</p>
 
         <div className="options">
           <div className="option-group">
-            <h3>📊 Demo Dataset</h3>
-            <p>Generated realistic job market data for 2021-2026 with 5,000+ entries</p>
+            <h3>📊 Zbiór danych demo</h3>
+            <p>Wygenerowane realistyczne dane rynku pracy z lat 2021-2026, ponad 5000 wpisów</p>
             <button
               onClick={loadDemoData}
               disabled={loading}
               className="primary"
             >
-              {loading ? 'Loading...' : 'Load Demo Data'}
+              {loading ? 'Wczytywanie...' : 'Wczytaj dane demo'}
             </button>
           </div>
 
-          <div className="divider">OR</div>
+          <div className="divider">LUB</div>
 
           <div className="option-group">
-            <h3>📁 Upload Your Data</h3>
-            <p>Upload CSV or Excel file with job market data</p>
+            <h3>📁 Prześlij własne dane</h3>
+            <p>Prześlij plik CSV lub Excel z danymi o rynku pracy</p>
             <input
               type="file"
               accept=".csv,.xlsx,.xls"
@@ -90,18 +91,18 @@ export default function DataLoader({ onDataLoaded }: DataLoaderProps) {
 
         {dataInfo && (
           <div className="data-info card">
-            <h3>📈 Loaded Data Info</h3>
+            <h3>📈 Informacje o wczytanych danych</h3>
             <div className="info-grid">
               <div className="info-item">
-                <span className="label">Total Rows:</span>
+                <span className="label">Liczba wierszy:</span>
                 <span className="value">{dataInfo.rows}</span>
               </div>
               <div className="info-item">
-                <span className="label">Date Range:</span>
-                <span className="value">{dataInfo.date_range?.from} to {dataInfo.date_range?.to}</span>
+                <span className="label">Zakres dat:</span>
+                <span className="value">{dataInfo.date_range?.from} – {dataInfo.date_range?.to}</span>
               </div>
               <div className="info-item">
-                <span className="label">Columns:</span>
+                <span className="label">Liczba kolumn:</span>
                 <span className="value">{dataInfo.columns?.length}</span>
               </div>
             </div>
@@ -109,13 +110,13 @@ export default function DataLoader({ onDataLoaded }: DataLoaderProps) {
         )}
 
         <div className="info-box">
-          <h4>What will you get?</h4>
+          <h4>Co otrzymasz?</h4>
           <ul>
-            <li>📊 Interactive charts & statistics</li>
-            <li>🔮 AI-powered predictions (2026-2031)</li>
-            <li>💬 Chat to discuss insights with AI</li>
-            <li>📉 Salary trends & skill demands</li>
-            <li>🌍 Geographic analysis</li>
+            <li>📊 Interaktywne wykresy i statystyki</li>
+            <li>🔮 Prognozy oparte na AI (2026-2031)</li>
+            <li>💬 Czat do omawiania wyników z AI</li>
+            <li>📉 Trendy zarobków i zapotrzebowanie na umiejętności</li>
+            <li>🌍 Analiza geograficzna</li>
           </ul>
         </div>
       </div>

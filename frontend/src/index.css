@@ -1,4 +1,8 @@
 :root {
+  /* App is light-themed only; without this, browsers in OS dark mode render
+     native controls (select dropdowns, etc.) with dark-mode colors —
+     producing illegible light-gray-on-white text in <option>/<optgroup>. */
+  color-scheme: light;
   --primary: #1f2937;
   --secondary: #3b82f6;
   --accent: #10b981;
