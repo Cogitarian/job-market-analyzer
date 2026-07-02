@@ -12,7 +12,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173", "https://job-market-analyzer.pages.dev"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
