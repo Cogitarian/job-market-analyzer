@@ -76,6 +76,11 @@ async def post_efekty_scoped(req: ScopedOutcomesRequest):
     outcomes = _scoped_outcomes(req.faculty_name, req.kierunek)
     if not outcomes:
         raise HTTPException(404, "Brak efektów dla tego zakresu")
+    MAX_OUTCOMES = 3000
+    if len(outcomes) > MAX_OUTCOMES:
+        import random
+        outcomes = random.Random(42).sample(outcomes, MAX_OUTCOMES)
+
 
     texts = [o.get("description", "") for o in outcomes]
     labels = [f"{o.get('code', '?')} ({o.get('category', '')})" for o in outcomes]
@@ -177,6 +182,12 @@ class ContentClusterRequest(BaseModel):
 async def post_content_clusters(req: ContentClusterRequest):
     corpus = syllabus_corpus.flatten_content_corpus()
     texts = [c["opis"] for c in corpus]
+    MAX_DOCS = 3000
+    if len(corpus) > MAX_DOCS:
+        import random
+        idx = random.Random(42).sample(range(len(corpus)), MAX_DOCS)
+        corpus = [corpus[i] for i in idx]
+        texts = [texts[i] for i in idx]
     result = corpus_nlp.kmeans_cluster_sklearn(texts, k=req.k)
     assignments = result["assignments"]
     clusters = []
