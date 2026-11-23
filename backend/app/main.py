@@ -22,7 +22,7 @@ app.add_middleware(
 )
 
 # Routes
-from app.api import data, analysis, predictions, chat, outcomes, kierunkowe_efekty, efekty_analysis, university_corpus, job_market
+from app.api import data, analysis, predictions, chat, outcomes, kierunkowe_efekty, efekty_analysis, university_corpus, job_market, apd_theses
 
 app.include_router(data.router, prefix="/api/data", tags=["data"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
@@ -33,6 +33,7 @@ app.include_router(kierunkowe_efekty.router, prefix="/api/kierunkowe-efekty", ta
 app.include_router(efekty_analysis.router, prefix="/api/efekty-analysis", tags=["efekty-analysis"])
 app.include_router(university_corpus.router, prefix="/api/university-corpus", tags=["university-corpus"])
 app.include_router(job_market.router, prefix="/api/job-market", tags=["job-market"])
+app.include_router(apd_theses.router, prefix="/api/apd-theses", tags=["apd-theses"])
 
 @app.get("/")
 async def root():
